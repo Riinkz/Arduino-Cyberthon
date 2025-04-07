@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="10">
+    <title>Anwesenheitssystem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'navy': '#0a192f',
+                        'light-navy': '#112240',
+                        'lightest-navy': '#233554',
+                        'slate': '#8892b0',
+                        'light-slate': '#a8b2d1',
+                        'lightest-slate': '#ccd6f6',
+                        'accent': '#64ffda', // Accent color
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font globally */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+        }
+        /* Add some subtle transition for hover effects */
+        tbody tr:hover {
+            transition: background-color 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Anwesenheitssystem</h1>
+            <p class="text-md text-slate-600">Cyberthon 2025 Projekt</p>
+            <p class="text-sm text-slate-500 mt-1">Aktuelle Sitzung (aktualisiert alle 10s)</p>
+        </header>
+
+        <main class="bg-white rounded-lg shadow-md p-6">
+
+            {% if logs %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-md">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                    ID
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Check-In Zeit
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Name
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for log in logs %}
+                            <tr class="hover:bg-gray-100">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hidden sm:table-cell">
+                                    {{ log.id }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {{ log.timestamp }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
+                                    {{ log.message }} {# Remember: Name is stored in the 'message' column #}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-10 px-6 bg-gray-50 rounded-md">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Keine Einträge</h3>
+                    <p class="mt-1 text-sm text-gray-500">Für diese Sitzung wurden noch keine Check-Ins erfasst.</p>
+                    <p class="mt-1 text-sm text-gray-500">(Bitte Knopf am Arduino drücken, um neue Sitzung zu starten)</p>
+                </div>
+            {% endif %}
+
+        </main>
+
+        <footer class="text-center mt-8 text-sm text-slate-500">
+            <p>&copy; 2025 - Dario Neumann, Jamil Reußwig, Moritz Schulze</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>

@@ -141,3 +141,5 @@ Das System besteht aus zwei Hauptkomponenten:
 * **Datenlogging:** Der Arduino sendet nur bei erfolgreicher Erkennung einer *autorisierten* Karte eine Nachricht im Format `"LOG:<UID>,<Name>"`.
 * **Duplikatvermeidung:** Der Python-Logger prüft vor dem Einfügen eines neuen Eintrags, ob der `Name` bereits in der `logs`-Tabelle existiert (seit dem letzten `"NEW_SESSION"`-Signal). Nur wenn der Name noch nicht vorhanden ist, wird der neue Eintrag mit Zeitstempel und Name hinzugefügt.
 
+
+![image](https://github.com/user-attachments/assets/e2c15acc-5cb8-4ee0-8565-fc8c2408e7dc)

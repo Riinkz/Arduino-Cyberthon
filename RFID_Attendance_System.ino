@@ -100,14 +100,12 @@ bool buttonWasPressed = false; // Helps detect a *new* button press (rising/fall
 const int numCards = 4; // Number of authorized cards defined
 String authorizedUIDs[numCards] = { // Array storing authorized card UIDs as strings (space-separated decimal bytes)
     "51 249 205 166",
-    "131 157 186 6",
     "12 34 56 78",
     "19 106 123 19"
 };
 
 String names[numCards] = { // Array storing corresponding names for the authorized UIDs
     "Alice",
-    "Bob",
     "Charlie",
     "TestchipJB"
 };

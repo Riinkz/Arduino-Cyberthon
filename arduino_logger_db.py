@@ -20,6 +20,7 @@ SERIAL_PORT = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
 BAUD_RATE = 9600
 DATABASE = "arduino_data.db"
 LOG_PREFIX = "LOG:"
+LOGOUT_PREFIX = "LOGOUT:"
 SESSION_SIGNAL = "NEW_SESSION"
 
 def setup_database():
@@ -58,6 +59,22 @@ def check_if_name_exists(conn, name):
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM logs WHERE message = ?", (name,))
     return cursor.fetchone() is not None # Returns True if name exists, False otherwise
+
+def delete_log(conn, name):
+    """Delete a log record for a specific name from the database."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM logs WHERE message = ?", (name,))
+        conn.commit()
+        if cursor.rowcount > 0:
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}] Logout: {name} removed from logs")
+            return True
+        else:
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}] Warning: {name} not found in logs for logout")
+            return False
+    except sqlite3.Error as e:
+        print(f"Error deleting log for {name}: {e}")
+        return False
 
 def insert_log(conn, timestamp, name):
     """Insert a log record (Timestamp, Name) into the database."""
@@ -145,8 +162,26 @@ def main():
 
                         except Exception as parse_error:
                              print(f"[{current_time}] Error parsing LOG message '{line}': {parse_error}")
+                    
+                    elif line.startswith(LOGOUT_PREFIX):
+                        try:
+                            # Extract data part, remove prefix
+                            data_part = line[len(LOGOUT_PREFIX):]
+                            # Split by comma (expecting UID,Name)
+                            parts = data_part.split(',')
+                            if len(parts) == 2:
+                                uid = parts[0].strip() # Get UID (optional to use)
+                                name = parts[1].strip() # Get Name
 
-                    # else: Ignore lines that don't match SESSION_SIGNAL or LOG_PREFIX
+                                # Delete the user from the logs
+                                delete_log(conn, name)
+                            else:
+                                print(f"[{current_time}] Warning: Malformed LOGOUT message received: {line}")
+
+                        except Exception as parse_error:
+                             print(f"[{current_time}] Error parsing LOGOUT message '{line}': {parse_error}")
+
+                    # else: Ignore lines that don't match SESSION_SIGNAL, LOG_PREFIX or LOGOUT_PREFIX
                     # Optional: print ignored lines for debugging
                     # else:
                     #    print(f"[{current_time}] Ignoring: {line}")

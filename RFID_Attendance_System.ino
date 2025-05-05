@@ -304,20 +304,38 @@ void loop() {
 
             if (name != "Unbekannt") {
                 // --- Authorized Card ---
-                lcd.print("Willkommen"); // Display welcome message
-                lcd.setCursor(0, 1);    // Move to the second line
-                lcd.print(name);        // Display the authorized user's name
+                // Check if user is logging out (countdown is running)
+                if (countdownStarted) {
+                    // This is a logout scan during active countdown
+                    lcd.print("Auf Wiedersehen"); // Display goodbye message
+                    lcd.setCursor(0, 1);    // Move to the second line
+                    lcd.print(name);        // Display the authorized user's name
 
-                // Activate Green LED, ensure Red LED is off
-                digitalWrite(GREEN_LED, HIGH);
-                greenLedState = HIGH; // Update state flag
-                redLedState = LOW;
-                digitalWrite(RED_LED, LOW);
-                ledOffMillis = currentMillis; // Start the timer to turn off the green LED
+                    // Activate Green LED, ensure Red LED is off
+                    digitalWrite(GREEN_LED, HIGH);
+                    greenLedState = HIGH; // Update state flag
+                    redLedState = LOW;
+                    digitalWrite(RED_LED, LOW);
+                    ledOffMillis = currentMillis; // Start the timer to turn off the green LED
 
-                // Serial.println(name + " erfolgreich eingecheckt"); // Optional debug message
-                // Send formatted log message via Serial for the Raspberry Pi
-                Serial.println("LOG:" + uidString + "," + name);
+                    // Send LOGOUT message via Serial for the Raspberry Pi
+                    Serial.println("LOGOUT:" + uidString + "," + name);
+                } else {
+                    // This is a regular login scan (no active countdown)
+                    lcd.print("Willkommen"); // Display welcome message
+                    lcd.setCursor(0, 1);    // Move to the second line
+                    lcd.print(name);        // Display the authorized user's name
+
+                    // Activate Green LED, ensure Red LED is off
+                    digitalWrite(GREEN_LED, HIGH);
+                    greenLedState = HIGH; // Update state flag
+                    redLedState = LOW;
+                    digitalWrite(RED_LED, LOW);
+                    ledOffMillis = currentMillis; // Start the timer to turn off the green LED
+
+                    // Send formatted log message via Serial for the Raspberry Pi
+                    Serial.println("LOG:" + uidString + "," + name);
+                }
             } else {
                 // --- Unauthorized Card ---
                 lcd.print("Karte ungueltig"); // Display "Card Invalid" (using ue for German ü)

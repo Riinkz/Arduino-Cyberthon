@@ -47,9 +47,9 @@
 // ──────────────────────────────────
 // Hardware Instances
 // ──────────────────────────────────
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-SevSeg sevseg;
-const byte numDigits = 4;
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Initialize LCD object: I2C address 0x27, 16 columns, 2 rows
+SevSeg sevseg; // Create SevSeg object
+const byte numDigits = 4; // Number of digits on the display
 byte digitPins[numDigits] = {22, 23, 24, 25};
 byte segmentPins[8]   = {26, 27, 28, 29, 30, 31, 32, 33};
 #define DISPLAY_TYPE COMMON_CATHODE
@@ -62,22 +62,23 @@ MFRC522 mfrc522(SDA_PIN, RST_PIN);
 // ──────────────────────────────────
 // Timing & State
 // ──────────────────────────────────
-unsigned long previousCountdownMillis = 0;
-const unsigned long countdownInterval = 1000;
+unsigned long previousCountdownMillis = 0; // Stores the last time (in ms) the countdown was updated
+const unsigned long countdownInterval = 1000; // Decrease countdown every 1000ms
 const int  initialCountdownSeconds    = 5700; // 95 min
-int  remainingSeconds = initialCountdownSeconds;
+int  remainingSeconds = initialCountdownSeconds; // Current time remaining
 
 unsigned long ledOffMillis     = 0;
 unsigned long rfidCooldownMillis = 0;
 const unsigned long ledBlinkDuration  = 500;
 const unsigned long rfidPauseDuration = 1000;
 
-unsigned long previousRefreshMillis = 0;
+unsigned long previousRefreshMillis = 0; // Stores the last time the 7-segment display was refreshed
 const unsigned long refreshInterval = 1;
 
-unsigned long previousRfidCheckMillis = 0;
-const unsigned long rfidCheckInterval = 75;
+unsigned long previousRfidCheckMillis = 0; // Stores the last time an RFID check was performed
+const unsigned long rfidCheckInterval = 75; // How often to check for an RFID card (milliseconds) - Reduces SPI traffic
 
+// Trackers for LED state, TFID state, countdown, button
 bool greenLedState     = LOW;
 bool redLedState       = LOW;
 bool rfidReady         = true;
@@ -87,7 +88,7 @@ bool buttonWasPressed  = false;
 // ──────────────────────────────────
 // Authorised Cards & Session State
 // ──────────────────────────────────
-const int numCards = 4;
+const int numCards = 4; // Number of authorized cards defined
 String authorizedUIDs[numCards] = {
   "51 249 205 166",
   "12 34 56 78",
@@ -106,6 +107,11 @@ bool insideSession[numCards] = {false};
 // ──────────────────────────────────
 // Helper Functions
 // ──────────────────────────────────
+/**
+ * @brief Checks if a given RFID UID string matches any authorized UID in the list.
+ * @param uid The UID string read from the RFID card (space-separated decimal bytes).
+ * @return The corresponding name if the UID is found in `authorizedUIDs`, otherwise the string "Unbekannt".
+ */
 String getNameFromUID(String uid) {
   for (int i = 0; i < numCards; i++) {
     if (uid == authorizedUIDs[i]) return names[i];
@@ -115,8 +121,8 @@ String getNameFromUID(String uid) {
 
 // returns the index of the UID in authorised list, or -1 if unknown.
 int getIndexFromUID(String uid) {
-  for (int i = 0; i < numCards; i++) {
-    if (uid == authorizedUIDs[i]) return i;
+  for (int i = 0; i < numCards; i++) { // For each card
+    if (uid == authorizedUIDs[i]) return i; // Return the associated name if a match is found
   }
   return -1;
 }
@@ -129,16 +135,17 @@ void resetInsideSession() {
 // SETUP
 // ──────────────────────────────────
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); // Initialize Serial communication (for sending logs and debugging); baud rate of 9600
 
   lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0); lcd.print("System Ready");
   lcd.setCursor(0, 1); lcd.print("Press button...");
-  delay(5);
+  delay(5); // Small delay after initial LCD write to ensure communication stability
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);   // Configure the button pin as input with the internal pull-up resistor enabled
+                                       // This means the pin reads HIGH when not pressed, LOW when pressed.
   sevseg.begin(DISPLAY_TYPE, numDigits, digitPins, segmentPins);
   sevseg.setBrightness(20);
   sevseg.setChars("----");
@@ -156,10 +163,13 @@ void setup() {
 // LOOP
 // ──────────────────────────────────
 void loop() {
-  unsigned long currentMillis = millis();
+  unsigned long currentMillis = millis(); // Get the current time in milliseconds since the Arduino started
 
   /* ───────── Button Logic ───────── */
-  bool buttonIsPressed = (digitalRead(BUTTON_PIN) == LOW);
+  bool buttonIsPressed = (digitalRead(BUTTON_PIN) == LOW); // LOW indicated a pressed button due to INPUT_PULLUP
+
+  // Check if the button is pressed NOW but was NOT pressed in the previous loop iteration,
+  // AND check if the countdown hasn't already been started. This detects a single press event.
   if (buttonIsPressed && !buttonWasPressed && !countdownStarted) {
     countdownStarted = true;
     remainingSeconds = initialCountdownSeconds;
@@ -177,23 +187,24 @@ void loop() {
     int seconds = remainingSeconds % 60;
     sevseg.setNumber(minutes * 100 + seconds, 2);
   }
-  buttonWasPressed = buttonIsPressed;
+  buttonWasPressed = buttonIsPressed;  // Remember the current button state for the next loop to detect changes (edge detection)
 
   /* ───────── Countdown ───────── */
+  // Check if the countdown is active, 1 second has passed, and time is remaining
   if (countdownStarted && currentMillis - previousCountdownMillis >= countdownInterval && remainingSeconds > 0) {
-    previousCountdownMillis = currentMillis;
-    remainingSeconds--;
+    previousCountdownMillis = currentMillis; // Updating the timestamp
+    remainingSeconds--; // Decreasing the remaining time by one second
     int minutes = remainingSeconds / 60;
     int seconds = remainingSeconds % 60;
-    sevseg.setNumber(minutes * 100 + seconds, 2);
-  } else if (countdownStarted && remainingSeconds <= 0) {
+    sevseg.setNumber(minutes * 100 + seconds, 2); // Format as MMSS integer
+  } else if (countdownStarted && remainingSeconds <= 0) { // Check if the countdown was active and has just reached zero or less
     sevseg.setChars("----");
     countdownStarted = false;
 
     lcd.clear();
     lcd.setCursor(0, 0); lcd.print("System Ready");
     lcd.setCursor(0, 1); lcd.print("Press button...");
-    delay(5);
+    delay(5); // Small delay after LCD update for stability
   }
 
   /* ───────── LED Off Timing ───────── */
@@ -205,7 +216,7 @@ void loop() {
   }
 
   /* ───────── RFID Cooldown ───────── */
-  if (!rfidReady && currentMillis - rfidCooldownMillis >= rfidPauseDuration) {
+  if (!rfidReady && currentMillis - rfidCooldownMillis >= rfidPauseDuration) {  // Checks if the RFID reader is currently in its cooldown period and if enough time has passed
     rfidReady = true;
     if (!countdownStarted) {
       lcd.clear();
@@ -216,16 +227,16 @@ void loop() {
   }
 
   /* ───────── RFID Reading ───────── */
-  if (rfidReady && currentMillis - previousRfidCheckMillis >= rfidCheckInterval) {
+  if (rfidReady && currentMillis - previousRfidCheckMillis >= rfidCheckInterval) { // Check if the RFID reader is ready AND if enough time has passed since the last check
     previousRfidCheckMillis = currentMillis;
 
     if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
       rfidReady = false; rfidCooldownMillis = currentMillis;
 
       String uidString = "";
-      for (byte i = 0; i < mfrc522.uid.size; i++) {
-        uidString += String(mfrc522.uid.uidByte[i], DEC);
-        if (i < mfrc522.uid.size - 1) uidString += " ";
+      for (byte i = 0; i < mfrc522.uid.size; i++) { // Loop through the bytes of the UID
+        uidString += String(mfrc522.uid.uidByte[i], DEC); // Convert byte to decimal string and append
+        if (i < mfrc522.uid.size - 1) uidString += " "; Add a space between bytes for readability
       }
       uidString.trim();
 

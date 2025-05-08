@@ -236,7 +236,7 @@ void loop() {
       String uidString = "";
       for (byte i = 0; i < mfrc522.uid.size; i++) { // Loop through the bytes of the UID
         uidString += String(mfrc522.uid.uidByte[i], DEC); // Convert byte to decimal string and append
-        if (i < mfrc522.uid.size - 1) uidString += " "; Add a space between bytes for readability
+        if (i < mfrc522.uid.size - 1) uidString += " "; // Add a space between bytes for readability
       }
       uidString.trim();
 

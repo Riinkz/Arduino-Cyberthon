@@ -19,9 +19,9 @@ SERIAL_PORT   = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyACM0"
 BAUD_RATE     = 9600
 DATABASE      = "arduino_data.db"
 
-LOGIN_PREFIX  = "LOGIN:"      # new – explicit login prefix
-LEGACY_PREFIX = "LOG:"        # kept for backwards-compatibility
-LOGOUT_PREFIX = "LOGOUT:"     # new – logout prefix
+LOGIN_PREFIX  = "LOGIN:"      
+LEGACY_PREFIX = "LOG:"        
+LOGOUT_PREFIX = "LOGOUT:"     
 SESSION_SIGNAL = "NEW_SESSION"
 
 # ─── Database helpers ───────────────────────────────────────────────────────
@@ -121,9 +121,6 @@ def main():
                     else:
                         print(f"[{now}] Malformed LOGOUT line: {line}")
                     continue
-
-                # ── (optional) debug for unhandled lines ────────────────
-                # print(f"[{now}] IGNORE → {line}")
 
             except serial.SerialException as e:
                 print(f"[WARN] Serial error: {e} – reconnecting in 5 s")
